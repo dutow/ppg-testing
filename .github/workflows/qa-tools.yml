@@ -6,12 +6,14 @@ on:
       - 'catalog/**'
       - 'templates/**'
       - 'tools/**'
+      - 'ppg/versions.yml'
       - '**/scenario.yml'
   pull_request:
     paths:
       - 'catalog/**'
       - 'templates/**'
       - 'tools/**'
+      - 'ppg/versions.yml'
       - '**/scenario.yml'
 
 jobs:

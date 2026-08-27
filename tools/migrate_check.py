@@ -143,6 +143,8 @@ def run_default():
 
 
 def main():
+    from tools import gen_groups
+    gen_groups.ensure()
     ap = argparse.ArgumentParser()
     ap.add_argument("--show", nargs=2, metavar=("GROUP", "SCENARIO"))
     ap.add_argument("--snapshot", action="store_true",

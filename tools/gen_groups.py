@@ -201,6 +201,13 @@ def clean_groups(data):
     return 0
 
 
+def ensure():
+    """Materialize all generated groups; used by render/migrate_check/tests."""
+    rc = write_groups(load_versions())
+    if rc:
+        raise RuntimeError("gen_groups.ensure() failed, see stderr")
+
+
 def build_manifest(data):
     manifest = {}
     for instance, type_name in all_groups(data):
