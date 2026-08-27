@@ -115,7 +115,7 @@ def render_context(data, instance, type_name):
 def render_group(data, instance, type_name):
     """Return {relpath: content} for one group dir."""
     ctx = render_context(data, instance, type_name)
-    files = {"__init__.py": ""}
+    files = {}
     for rel in template_files(type_name):
         tpl = _env.get_template("%s/%s.j2" % (type_name, rel))
         files[rel] = tpl.render(**ctx)

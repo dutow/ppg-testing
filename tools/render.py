@@ -154,7 +154,6 @@ def collect_targets(groups, scenario_filter=None):
         if scenario_filter is not None:
             names = [n for n in names if n in scenario_filter]
         mdir = g / "molecule"
-        targets.append((mdir / "__init__.py", ""))
         pb = g / "playbooks" / "playbook.yml"
         if not pb.exists():
             targets.append((pb, HEADER + DEFAULT_PLAYBOOK))
@@ -162,7 +161,6 @@ def collect_targets(groups, scenario_filter=None):
             content = render_one(g, n, header=HEADER)
             sdir = mdir / n
             targets.append((sdir / "molecule.yml", content))
-            targets.append((sdir / "__init__.py", ""))
     return targets
 
 

@@ -106,7 +106,7 @@ def _make_group(tmp_path, scenario_yml=SMALL_SCENARIO_YML):
     return group_dir
 
 
-def test_render_cmd_writes_header_and_init_files(tmp_path):
+def test_render_cmd_writes_header_and_playbook(tmp_path):
     group_dir = _make_group(tmp_path)
     rc = render.main(["--group", str(group_dir)])
     assert rc == 0
@@ -115,10 +115,10 @@ def test_render_cmd_writes_header_and_init_files(tmp_path):
     text = mfile.read_text()
     assert text.startswith(render.HEADER)
 
-    assert (group_dir / "molecule" / "__init__.py").exists()
-    assert (group_dir / "molecule" / "__init__.py").read_text() == ""
-    assert (group_dir / "molecule" / "debian-13" / "__init__.py").exists()
+    assert not (group_dir / "molecule" / "__init__.py").exists()
     assert (group_dir / "molecule" / "rocky-9" / "molecule.yml").exists()
+    pb = group_dir / "playbooks" / "playbook.yml"
+    assert pb.read_text() == render.HEADER + render.DEFAULT_PLAYBOOK
 
 
 def test_render_cmd_scenario_filter(tmp_path):
@@ -191,9 +191,6 @@ def test_clean_honors_scenario_filter(tmp_path):
     assert not (group_dir / "molecule" / "debian-13").exists()
     # sibling scenario untouched
     assert (group_dir / "molecule" / "rocky-9" / "molecule.yml").exists()
-    assert (group_dir / "molecule" / "rocky-9" / "__init__.py").exists()
-    # group init/dir survive since rocky-9 still there
-    assert (group_dir / "molecule" / "__init__.py").exists()
 
 
 def test_find_all_groups(tmp_path, monkeypatch):

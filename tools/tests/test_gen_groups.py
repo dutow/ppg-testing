@@ -83,8 +83,6 @@ def test_write_header_marks_files(tmp_path, monkeypatch):
     assert gen_groups.write_groups(gen_groups.load_versions()) == 0
     tasks = tmp_path / "ppg" / "pg-17" / "tasks" / "main.yml"
     assert tasks.read_text().startswith(gen_groups.HEADER)
-    init = tmp_path / "ppg" / "pg-17" / "__init__.py"
-    assert init.read_text() == ""
     # second write over generated files succeeds, hand-written file refuses
     assert gen_groups.write_groups(gen_groups.load_versions()) == 0
     tasks.write_text("hand written\n")
