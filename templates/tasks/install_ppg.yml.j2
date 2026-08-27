@@ -25,30 +25,31 @@
     vars:
       packages:
       - percona-postgresql
-      - percona-postgresql-17
+      - percona-postgresql-<< major >>
       - percona-postgresql-all
       - percona-postgresql-client
-      - percona-postgresql-client-17
+      - percona-postgresql-client-<< major >>
       - percona-postgresql-common
       - percona-postgresql-contrib
       - percona-postgresql-doc
-      - percona-postgresql-doc-17
-      - percona-postgresql-plperl-17
-      - percona-postgresql-plpython3-17
-      - percona-postgresql-pltcl-17
-      - percona-postgresql-server-dev-17
+      - percona-postgresql-doc-<< major >>
+      - percona-postgresql-plperl-<< major >>
+      - percona-postgresql-plpython3-<< major >>
+      - percona-postgresql-pltcl-<< major >>
+      - percona-postgresql-server-dev-<< major >>
       - percona-postgresql-server-dev-all
-      - percona-postgresql-17-dbgsym
-      - percona-postgresql-client-17-dbgsym
-      - percona-postgresql-plperl-17-dbgsym
-      - percona-postgresql-plpython3-17-dbgsym
-      - percona-postgresql-pltcl-17-dbgsym
+      - percona-postgresql-<< major >>-dbgsym
+      - percona-postgresql-client-<< major >>-dbgsym
+      - percona-postgresql-plperl-<< major >>-dbgsym
+      - percona-postgresql-plpython3-<< major >>-dbgsym
+      - percona-postgresql-pltcl-<< major >>-dbgsym
       - postgresql-client-common
       - postgresql-common
     when: ansible_os_family == "Debian"
     environment:
       PERCONA_TELEMETRY_URL: "https://check-dev.percona.com/v1/telemetry/GenericReport"
 
+<% if plpython_extra | default(true) %>
   - name: install Percona Platform for PostgreSQL deb packages
     apt:
       name: "{{ packages }}"
@@ -56,12 +57,12 @@
       state: latest
     vars:
       packages:
-      - percona-postgresql-plpython3-17
-      - percona-postgresql-plpython3-17-dbgsym
+      - percona-postgresql-plpython3-<< major >>
+      - percona-postgresql-plpython3-<< major >>-dbgsym
     when:
       - ansible_os_family == "Debian"
 
-  - name: install Percona Platform for PostgreSQL rpm packages for RHEL
+<% endif %>  - name: install Percona Platform for PostgreSQL rpm packages for RHEL
     yum:
       name: "{{ packages }}"
       state: latest
@@ -70,36 +71,40 @@
       packages:
         - percona-postgresql-client-common
         - percona-postgresql-common
-        - percona-postgresql17
-        - percona-postgresql17-contrib
-        - percona-postgresql17-debuginfo
-        - percona-postgresql17-devel
-        - percona-postgresql17-docs
-        - percona-postgresql17-libs
-        - percona-postgresql17-llvmjit
-        - percona-postgresql17-plpython3
-        - percona-postgresql17-plperl
-        - percona-postgresql17-pltcl
-        - percona-postgresql17-server
-        - percona-postgresql17-test
-        - percona-postgresql17-contrib-debuginfo
-        - percona-postgresql17-debuginfo
-        - percona-postgresql17-debugsource
-        - percona-postgresql17-devel-debuginfo
-        - percona-postgresql17-libs-debuginfo
-        - percona-postgresql17-plperl-debuginfo
-        - percona-postgresql17-pltcl-debuginfo
-        - percona-postgresql17-plpython3-debuginfo
-        - percona-postgresql17-server-debuginfo
+        - percona-postgresql<< major >>
+        - percona-postgresql<< major >>-contrib
+        - percona-postgresql<< major >>-debuginfo
+        - percona-postgresql<< major >>-devel
+        - percona-postgresql<< major >>-docs
+        - percona-postgresql<< major >>-libs
+        - percona-postgresql<< major >>-llvmjit
+        - percona-postgresql<< major >>-plpython3
+        - percona-postgresql<< major >>-plperl
+        - percona-postgresql<< major >>-pltcl
+        - percona-postgresql<< major >>-server
+        - percona-postgresql<< major >>-test
+        - percona-postgresql<< major >>-contrib-debuginfo
+        - percona-postgresql<< major >>-debuginfo
+        - percona-postgresql<< major >>-debugsource
+        - percona-postgresql<< major >>-devel-debuginfo
+        - percona-postgresql<< major >>-libs-debuginfo
+        - percona-postgresql<< major >>-plperl-debuginfo
+        - percona-postgresql<< major >>-pltcl-debuginfo
+        - percona-postgresql<< major >>-plpython3-debuginfo
+        - percona-postgresql<< major >>-server-debuginfo
+<% if major >= 18 %>
+        - percona-postgresql-common-dev
+<% endif %>
     when: ansible_os_family == "RedHat"
     environment:
       PERCONA_TELEMETRY_URL: "https://check-dev.percona.com/v1/telemetry/GenericReport"
+<% if major < 18 %>
 
   - name: Determine required PostgreSQL dev package for RHEL
     set_fact:
       pg_dev_package: >-
         {{ 'percona-postgresql-server-dev-all'
-          if (pg_version_to_install | string is version('17.4', '<=', strict=True))
+          if (pg_version_to_install | string is version('<< dev_switch_cutoff >>', '<=', strict=True))
           else 'percona-postgresql-common-dev' }}
     when: ansible_os_family == "RedHat"
 
@@ -109,3 +114,4 @@
       state: latest
       update_cache: yes
     when: ansible_os_family == "RedHat"
+<% endif %>

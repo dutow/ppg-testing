@@ -6,9 +6,9 @@
 
   - name: Setting facts so that they will be persisted in the fact cache
     ansible.builtin.set_fact:
-      pgaudit_rhel_package_name: "percona-pgaudit16"
-      postgis_rhel_package_name_prefix: "percona-postgis35_16"
-    when: (pg_version_to_install | string is version('16.1', '>=', strict=True))
+      pgaudit_rhel_package_name: "percona-pgaudit<< major >>"
+      postgis_rhel_package_name_prefix: "percona-postgis35_<< major >>"
+    when: (pg_version_to_install | string is version('<< vars_gate >>', '>=', strict=True))
 
   - debug:
       msg: "Value of pgaudit_rhel_package_name is : {{ pgaudit_rhel_package_name }}"
@@ -68,8 +68,8 @@
       update_cache: yes
     vars:
       packages:
-        - percona-postgresql-16-pgaudit
-        - percona-postgresql-16-pgaudit-dbgsym
+        - percona-postgresql-<< major >>-pgaudit
+        - percona-postgresql-<< major >>-pgaudit-dbgsym
     when: ansible_os_family == "Debian"
 
   - name: Install pgaudit RHEL
@@ -112,7 +112,7 @@
         repo1-path=/var/lib/pgbackrest
 
         [testing]
-        pg1-path=/var/lib/postgresql/16/main
+        pg1-path=/var/lib/postgresql/<< major >>/main
         pg1-port=5432
     when: ansible_os_family == "Debian"
 
@@ -125,13 +125,13 @@
         repo1-path=/var/lib/pgbackrest
 
         [testing]
-        pg1-path=/var/lib/pgsql/16/data
+        pg1-path=/var/lib/pgsql/<< major >>/data
         pg1-port=5432
     when: ansible_os_family == "RedHat"
 
   - name: Configure backup config for Debian
     blockinfile:
-      path: /etc/postgresql/16/main/postgresql.conf
+      path: /etc/postgresql/<< major >>/main/postgresql.conf
       block: |
         archive_mode = on
         archive_command = 'pgbackrest --stanza=testing archive-push %p'
@@ -141,7 +141,7 @@
 
   - name: Configure backup config for RHEL
     blockinfile:
-      path: /var/lib/pgsql/16/data/postgresql.conf
+      path: /var/lib/pgsql/<< major >>/data/postgresql.conf
       block: |
         archive_mode = on
         archive_command = 'pgbackrest --stanza=testing archive-push %p'
@@ -152,7 +152,7 @@
   - name: Restart Postgres RHEL
     include_tasks: "{{ role_path }}/../../tasks/start_postgres_with_diagnostics.yml"
     vars:
-      svc_name: postgresql-16
+      svc_name: postgresql-<< major >>
       svc_state: restarted
     when: ansible_os_family == "RedHat"
 
@@ -170,13 +170,13 @@
       update_cache: yes
     vars:
       packages:
-        - percona-postgresql-16-repack
-        - percona-postgresql-16-repack-dbgsym
+        - percona-postgresql-<< major >>-repack
+        - percona-postgresql-<< major >>-repack-dbgsym
     when: ansible_os_family == "Debian"
 
   - name: Install pgrepack RHEL
     yum:
-      name: percona-pg_repack16
+      name: percona-pg_repack<< major >>
       state: latest
       update_cache: yes
     when: ansible_os_family == "RedHat"
@@ -238,8 +238,8 @@
       update_cache: yes
     vars:
       packages:
-        - percona-pg_stat_monitor16
-        - percona-pg_stat_monitor16-debuginfo
+        - percona-pg_stat_monitor<< major >>
+        - percona-pg_stat_monitor<< major >>-debuginfo
     when: ansible_os_family == "RedHat"
 
   - name: Install pg-stat-monitor debian
@@ -249,8 +249,8 @@
       update_cache: yes
     vars:
       packages:
-        - percona-pg-stat-monitor16
-        - percona-pg-stat-monitor16-dbgsym
+        - percona-pg-stat-monitor<< major >>
+        - percona-pg-stat-monitor<< major >>-dbgsym
     when: ansible_os_family == "Debian"
 
   - name: Install pgbadger RHEL
@@ -288,22 +288,22 @@
       PATH: /usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
     when: ansible_os_family == "RedHat" and ansible_distribution_major_version == "9"
 
-  - name: Install percona-pgaudit16_set_user RHEL
+  - name: Install percona-pgaudit<< major >>_set_user RHEL
     yum:
-      name: percona-pgaudit16_set_user
+      name: percona-pgaudit<< major >>_set_user
       state: latest
       update_cache: yes
     when: ansible_os_family == "RedHat"
 
-  - name: Install percona-pgaudit16_set_user Debian
+  - name: Install percona-pgaudit<< major >>_set_user Debian
     apt:
       name: "{{ packages }}"
       state: latest
       update_cache: yes
     vars:
       packages:
-        - percona-pgaudit16-set-user
-        - percona-pgaudit16-set-user-dbgsym
+        - percona-pgaudit<< major >>-set-user
+        - percona-pgaudit<< major >>-set-user-dbgsym
     when: ansible_os_family == "Debian"
 
   - name: Install percona-pgbouncer RHEL
@@ -331,11 +331,15 @@
       update_cache: yes
     vars:
       packages:
-        - percona-pgpool-II-pg16
-        - percona-pgpool-II-pg16-extensions
+        - percona-pgpool-II-pg<< major >>
+        - percona-pgpool-II-pg<< major >>-extensions
+<% if pgpool_low_gate is defined %>
+    when: (ansible_os_family == "RedHat" and pg_version_to_install | string is version('<< pgpool_low_gate >>', '>=', strict=True))
+<% else %>
     when: ansible_os_family == "RedHat"
+<% endif %>
 
-  - name: Install percona-pgpool Debian (libpgpool2 for < 16.14)
+  - name: Install percona-pgpool Debian (libpgpool2 for < << pgpool_switch >>)
     apt:
       name: "{{ packages }}"
       state: latest
@@ -346,9 +350,12 @@
         - libpgpool2
     when: >
       ansible_os_family == "Debian" and
-      pg_version_to_install | string is version('16.14', '<', strict=True)
+<% if pgpool_low_gate is defined %>
+      pg_version_to_install | string is version('<< pgpool_low_gate >>', '>=', strict=True) and
+<% endif %>
+      pg_version_to_install | string is version('<< pgpool_switch >>', '<', strict=True)
 
-  - name: Install percona-pgpool Debian (libpgpoolpcp3 for >= 16.14)
+  - name: Install percona-pgpool Debian (libpgpoolpcp3 for >= << pgpool_switch >>)
     apt:
       name: "{{ packages }}"
       state: latest
@@ -359,7 +366,7 @@
         - libpgpoolpcp3
     when: >
       ansible_os_family == "Debian" and
-      pg_version_to_install | string is version('16.14', '>=', strict=True)
+      pg_version_to_install | string is version('<< pgpool_switch >>', '>=', strict=True)
 
   - name: Enable llvm-toolset for RHEL8 to install PostGIS
     become: true
@@ -383,7 +390,11 @@
       - "{{postgis_rhel_package_name_prefix}}-gui-debuginfo"
       - "{{postgis_rhel_package_name_prefix}}-llvmjit"
       - "{{postgis_rhel_package_name_prefix}}-utils"
+<% if postgis_gate is defined %>
+    when: (ansible_os_family == "RedHat" and pg_version_to_install | string is version('<< postgis_gate >>', '>=', strict=True))
+<% else %>
     when: ansible_os_family == "RedHat"
+<% endif %>
 
   - name: Install percona-postgis Debian
     apt:
@@ -392,29 +403,33 @@
       update_cache: yes
     vars:
       packages:
-        - percona-postgresql-16-postgis-3
-        - percona-postgresql-16-postgis-3-scripts
+        - percona-postgresql-<< major >>-postgis-3
+        - percona-postgresql-<< major >>-postgis-3-scripts
         - percona-postgresql-postgis-scripts
         - percona-postgresql-postgis
         - percona-postgis
+<% if postgis_gate is defined %>
+    when: (ansible_os_family == "Debian" and pg_version_to_install | string is version('<< postgis_gate >>', '>=', strict=True))
+<% else %>
     when: ansible_os_family == "Debian"
+<% endif %>
 
-  - name: Install percona-wal2json16 RHEL
+  - name: Install percona-wal2json<< major >> RHEL
     yum:
-      name: percona-wal2json16
+      name: percona-wal2json<< major >>
       state: latest
       update_cache: yes
     when: ansible_os_family == "RedHat"
 
-  - name: Install percona-wal2json16 Debian
+  - name: Install percona-wal2json<< major >> Debian
     apt:
       name: "{{ packages }}"
       state: latest
       update_cache: yes
     vars:
       packages:
-        - percona-postgresql-16-wal2json
-        - percona-postgresql-16-wal2json-dbgsym
+        - percona-postgresql-<< major >>-wal2json
+        - percona-postgresql-<< major >>-wal2json-dbgsym
     when: ansible_os_family == "Debian"
 
   - name: Install percona-pg_gather RHEL
@@ -422,7 +437,11 @@
       name: percona-pg_gather
       state: latest
       update_cache: yes
+<% if gather_gate is defined %>
+    when: (ansible_os_family == "RedHat" and pg_version_to_install | string is version('<< gather_gate >>', '>=', strict=True))
+<% else %>
     when: ansible_os_family == "RedHat"
+<% endif %>
 
   - name: Install percona-pg_gather Debian
     apt:
@@ -432,19 +451,110 @@
     vars:
       packages:
         - percona-pg-gather
+<% if gather_gate is defined %>
+    when: (ansible_os_family == "Debian" and pg_version_to_install | string is version('<< gather_gate >>', '>=', strict=True))
+<% else %>
     when: ansible_os_family == "Debian"
+<% endif %>
 
-  - name: Install pg_cron packages RHEL
+<% if not legacy_layout | default(false) %>
+  - name: Install pgvector packages RHEL
     yum:
       name: "{{ packages }}"
       state: latest
       update_cache: yes
     vars:
       packages:
-      - percona-pg_cron_16
+      - percona-pgvector_<< major >>
+      - percona-pgvector_<< major >>-debuginfo
+      - percona-pgvector_<< major >>-debugsource
+      - percona-pgvector_<< major >>-llvmjit
+<% if pgvector_gate is defined %>
+    when: (ansible_os_family == "RedHat" and pg_version_to_install | string is version('<< pgvector_gate >>', '>=', strict=True))
+<% else %>
+    when: ansible_os_family == "RedHat"
+<% endif %>
+
+  - name: Install pgvector packages Debian
+    apt:
+      name: "{{ packages }}"
+      state: latest
+      update_cache: yes
+    vars:
+      packages:
+      - percona-postgresql-<< major >>-pgvector
+<% if pgvector_gate is defined %>
+    when: (ansible_os_family == "Debian" and pg_version_to_install | string is version('<< pgvector_gate >>', '>=', strict=True))
+<% else %>
+    when: ansible_os_family == "Debian"
+<% endif %>
+
+  - name: Install pg_tde packages RHEL
+    yum:
+      name: "{{ packages }}"
+      state: latest
+      update_cache: yes
+    vars:
+      packages:
+      - percona-pg_tde<< major >>
+      - percona-pg_tde<< major >>-devel
+      - percona-pg_tde<< major >>-debugsource
+      - percona-pg_tde<< major >>-debuginfo
+<% if tde_gate is defined %>
+    when: (ansible_os_family == "RedHat" and pg_version_to_install | string is version('<< tde_gate >>', '>=', strict=True))
+<% else %>
+    when: ansible_os_family == "RedHat"
+<% endif %>
+
+  - name: Install pg_tde packages Debian
+    apt:
+      name: "{{ packages }}"
+      state: latest
+      update_cache: yes
+    vars:
+      packages:
+      - percona-pg-tde<< major >>
+      - percona-pg-tde<< major >>-client
+      - percona-pg-tde<< major >>-dbgsym
+<% if tde_gate is defined %>
+    when: (ansible_os_family == "Debian" and pg_version_to_install | string is version('<< tde_gate >>', '>=', strict=True))
+<% else %>
+    when: ansible_os_family == "Debian"
+<% endif %>
+
+<% if oidc | default(false) %>
+  - name: Install pg_oidc_validator packages RHEL
+    yum:
+      name: "{{ packages }}"
+      state: latest
+      update_cache: yes
+    vars:
+      packages:
+      - percona-pg_oidc_validator<< major >>
+    when: (ansible_os_family == "RedHat" and pg_version_to_install | string is version('<< major >>.2', '>=', strict=True))
+
+  - name: Install pg_oidc_validator packages Debian
+    apt:
+      name: "{{ packages }}"
+      state: latest
+      update_cache: yes
+    vars:
+      packages:
+      - percona-pg-oidc-validator<< major >>
+    when: (ansible_os_family == "Debian" and pg_version_to_install | string is version('<< major >>.2', '>=', strict=True))
+
+<% endif %>
+<% endif %>  - name: Install pg_cron packages RHEL
+    yum:
+      name: "{{ packages }}"
+      state: latest
+      update_cache: yes
+    vars:
+      packages:
+      - percona-pg_cron_<< major >>
     when:
       - ansible_os_family == "RedHat"
-      - pg_version_to_install | string is version('16.13', '>', strict=True)
+      - pg_version_to_install | string is version('<< cron_gate >>', '>', strict=True)
 
   - name: Install pg_cron packages Debian
     apt:
@@ -453,45 +563,80 @@
       update_cache: yes
     vars:
       packages:
-      - percona-postgresql-16-cron
+      - percona-postgresql-<< major >>-cron
     when:
       - ansible_os_family == "Debian"
-      - pg_version_to_install | string is version('16.13', '>', strict=True)
+      - pg_version_to_install | string is version('<< cron_gate >>', '>', strict=True)
 
   - name: Configure shared_preload_libraries
     vars:
-      base_extensions: ['percona_pg_telemetry', 'pg_stat_monitor', 'pgaudit', 'set_user']
+<% if oidc | default(false) %>
+      # 1. Define base extensions
+      # pg_oidc_validator is NOT preloaded; it is tested as a regular extension via CREATE EXTENSION
+      base_extensions: << base_extensions >>
+
+      # 2. Conditionally add pg_cron (available from << major >>.4 onwards)
       final_extensions: >-
         {{
           base_extensions
           + (['pg_cron'] if (
-              pg_version_to_install | string is version('16.13', '>', strict=True)
+              pg_version_to_install | string is version('<< cron_gate >>', '>', strict=True)
             ) else [])
         }}
-      pg_conf_path: "{{ '/etc/postgresql/16/main/postgresql.conf' if ansible_os_family == 'Debian' else '/var/lib/pgsql/16/data/postgresql.conf' }}"
+
+      # 3. Handle OS-specific paths dynamically
+      pg_conf_path: "{{ '/etc/postgresql/<< major >>/main/postgresql.conf' if ansible_os_family == 'Debian' else '/var/lib/pgsql/<< major >>/data/postgresql.conf' }}"
+
+<% else %>
+      base_extensions: << base_extensions >>
+      final_extensions: >-
+        {{
+          base_extensions
+          + (['pg_cron'] if (
+              pg_version_to_install | string is version('<< cron_gate >>', '>', strict=True)
+            ) else [])
+        }}
+      pg_conf_path: "{{ '/etc/postgresql/<< major >>/main/postgresql.conf' if ansible_os_family == 'Debian' else '/var/lib/pgsql/<< major >>/data/postgresql.conf' }}"
+<% if not legacy_layout | default(false) %>
+
+<% endif %>
+<% endif %>
     ansible.builtin.lineinfile:
       path: "{{ pg_conf_path }}"
       regexp: '^#?shared_preload_libraries\s*='
       line: "shared_preload_libraries = '{{ final_extensions | join(', ') }}'"
       state: present
     become: true
+<% if oidc | default(false) %>
+    # Only run if it's one of your supported families
+<% endif %>
     when: ansible_os_family in ["Debian", "RedHat"]
 
-  - name: Remove pg_hba.conf debian
+<% if oidc | default(false) %>
+  - name: Configure pg_oidc_validator settings in postgresql.conf
+    blockinfile:
+      path: "{{ '/etc/postgresql/<< major >>/main/postgresql.conf' if ansible_os_family == 'Debian' else '/var/lib/pgsql/<< major >>/data/postgresql.conf' }}"
+      marker: "# {mark} ANSIBLE MANAGED BLOCK pg_oidc_validator"
+      block: |
+        oauth_validator_libraries = 'pg_oidc_validator'
+        pg_oidc_validator.authn_field = 'sub'
+    when: (ansible_os_family in ["Debian", "RedHat"] and pg_version_to_install | string is version('<< major >>.2', '>=', strict=True))
+
+<% endif %>  - name: Remove pg_hba.conf debian
     file:
-      path: /var/lib/pgsql/16/data/pg_hba.conf
+      path: /var/lib/pgsql/<< major >>/data/pg_hba.conf
       state: absent
     when: ansible_os_family == "RedHat"
 
   - name: Remove pg_hba.conf debian
     file:
-      path: /etc/postgresql/16/main/pg_hba.conf
+      path: /etc/postgresql/<< major >>/main/pg_hba.conf
       state: absent
     when: ansible_os_family == "Debian"
 
   - name: Edit pg_hba.conf RHEL
     blockinfile:
-      path: /var/lib/pgsql/16/data/pg_hba.conf
+      path: /var/lib/pgsql/<< major >>/data/pg_hba.conf
       create: yes
       owner: postgres
       block: |
@@ -507,7 +652,7 @@
     blockinfile:
       create: yes
       owner: postgres
-      path: /etc/postgresql/16/main/pg_hba.conf
+      path: /etc/postgresql/<< major >>/main/pg_hba.conf
       block: |
         local   all             all                                     trust
         host    all             all             127.0.0.1/32            trust
@@ -517,10 +662,29 @@
         host    replication     all             ::1/128                 trust
     when: ansible_os_family == "Debian"
 
-  - name: Restart Postgres RHEL
+<% if oidc | default(false) %>
+  - name: Add OIDC entry to pg_hba.conf RHEL
+    lineinfile:
+      path: /var/lib/pgsql/<< major >>/data/pg_hba.conf
+      line: 'host    all             oidc_test_user  127.0.0.1/32            oauth issuer="https://mock-issuer.com", scope="openid"'
+      state: present
+    when:
+      - ansible_os_family == "RedHat"
+      - pg_version_to_install | string is version('<< major >>.2', '>=', strict=True)
+
+  - name: Add OIDC entry to pg_hba.conf Debian
+    lineinfile:
+      path: /etc/postgresql/<< major >>/main/pg_hba.conf
+      line: 'host    all             oidc_test_user  127.0.0.1/32            oauth issuer="https://mock-issuer.com", scope="openid"'
+      state: present
+    when:
+      - ansible_os_family == "Debian"
+      - pg_version_to_install | string is version('<< major >>.2', '>=', strict=True)
+
+<% endif %>  - name: Restart Postgres RHEL
     include_tasks: "{{ role_path }}/../../tasks/start_postgres_with_diagnostics.yml"
     vars:
-      svc_name: postgresql-16
+      svc_name: postgresql-<< major >>
       svc_state: restarted
     when: ansible_os_family == "RedHat"
 
@@ -543,6 +707,7 @@
       - python3-etcd
     when: ansible_os_family == "RedHat"
 
+<% if etcd_restart | default(true) %>
   - name: Restart etcd RHEL
     include_tasks: "{{ role_path }}/../../tasks/start_service_with_diagnostics.yml"
     vars:
@@ -550,6 +715,8 @@
       svc_state: restarted
     when: ansible_os_family == "RedHat"
 
+<% endif %>
+<% if legacy_layout | default(false) %>
   - name: Install pgvector packages RHEL
     yum:
       name: "{{ packages }}"
@@ -557,11 +724,11 @@
       update_cache: yes
     vars:
       packages:
-      - percona-pgvector_16
-      - percona-pgvector_16-debuginfo
-      - percona-pgvector_16-debugsource
-      - percona-pgvector_16-llvmjit
-    when: (ansible_os_family == "RedHat" and pg_version_to_install | string is version('16.6', '>=', strict=True))
+      - percona-pgvector_<< major >>
+      - percona-pgvector_<< major >>-debuginfo
+      - percona-pgvector_<< major >>-debugsource
+      - percona-pgvector_<< major >>-llvmjit
+    when: (ansible_os_family == "RedHat" and pg_version_to_install | string is version('<< pgvector_gate >>', '>=', strict=True))
 
   - name: Install pgvector packages Debian
     apt:
@@ -570,8 +737,8 @@
       update_cache: yes
     vars:
       packages:
-      - percona-postgresql-16-pgvector
-    when: (ansible_os_family == "Debian" and pg_version_to_install | string is version('16.6', '>=', strict=True))
+      - percona-postgresql-<< major >>-pgvector
+    when: (ansible_os_family == "Debian" and pg_version_to_install | string is version('<< pgvector_gate >>', '>=', strict=True))
 
   - name: Install patroni related packages Debian
     apt:
@@ -584,8 +751,9 @@
         - percona-haproxy
     when: (ansible_distribution == "Ubuntu") or
       (ansible_os_family == "Debian" and ansible_lsb.major_release|int <= 11) or
-      (ansible_os_family == "Debian" and pg_version_to_install | string is version('16.3', '>=', strict=True))
+      (ansible_os_family == "Debian" and pg_version_to_install | string is version('<< patroni_deb_gate >>', '>=', strict=True))
 
+<% endif %>
   - name: Install patroni related packages Debian
     apt:
       name: "{{ packages }}"
@@ -807,14 +975,22 @@
     vars:
       svc_name: pgpool
       svc_state: started
+<% if pgpool_start_gate is defined %>
+    when: (ansible_os_family == "RedHat" and pg_version_to_install | string is version('<< pgpool_start_gate >>', '>=', strict=True))
+<% else %>
     when: ansible_os_family == "RedHat"
+<% endif %>
 
   - name: Start pgpool service
     include_tasks: "{{ role_path }}/../../tasks/start_service_with_diagnostics.yml"
     vars:
       svc_name: percona-pgpool2
       svc_state: started
+<% if pgpool_start_gate is defined %>
+    when: (ansible_os_family == "Debian" and pg_version_to_install | string is version('<< pgpool_start_gate >>', '>=', strict=True))
+<% else %>
     when: ansible_os_family == "Debian"
+<% endif %>
 
   - name: Add user postgres to sudoers
     user:
