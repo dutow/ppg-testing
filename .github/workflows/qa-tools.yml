@@ -1,0 +1,48 @@
+name: qa-tools
+
+on:
+  push:
+    paths:
+      - 'catalog/**'
+      - 'templates/**'
+      - 'tools/**'
+      - '**/scenario.yml'
+  pull_request:
+    paths:
+      - 'catalog/**'
+      - 'templates/**'
+      - 'tools/**'
+      - '**/scenario.yml'
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: checkout ppg-testing
+        uses: actions/checkout@v4
+
+      - name: set up python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      - name: install deps
+        run: pip install pytest jinja2 pyyaml
+
+      - name: clone jenkins-pipelines
+        run: git clone --depth 1 https://github.com/Percona-Lab/jenkins-pipelines.git /tmp/jp
+
+      - name: run unit tests
+        env:
+          PPG_JENKINS_REPO: /tmp/jp
+        run: python3 -m pytest tools/tests/ -v
+
+      - name: render regression snapshot
+        run: python3 tools/migrate_check.py --snapshot
+
+      - name: jenkins-pipelines drift check
+        # advisory only until both branches merge -- flip to hard fail (drop
+        # continue-on-error) once jenkins-pipelines main carries the generated
+        # ppg jobs and moleculeEnvPPG.groovy.
+        continue-on-error: true
+        run: python3 tools/gen_jenkins.py --check --jenkins-repo /tmp/jp

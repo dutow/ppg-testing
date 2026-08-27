@@ -1,9 +1,16 @@
+import os
 import re
+
+import pytest
 
 from tools import catalog
 
-VARS_DIR = "/storage/pgqa/jenkins-pipelines/vars"
+JENKINS_REPO = os.environ.get("PPG_JENKINS_REPO", "/storage/pgqa/jenkins-pipelines")
+VARS_DIR = JENKINS_REPO + "/vars"
 ENVPPG = VARS_DIR + "/moleculeEnvPPG.groovy"
+
+needs_jenkins_repo = pytest.mark.skipif(
+    not os.path.isdir(VARS_DIR), reason="jenkins-pipelines checkout not found at %s" % JENKINS_REPO)
 
 LIST_FILES = {
     "all": "ppgOperatingSystemsALL.groovy",
@@ -16,6 +23,7 @@ LIST_FILES = {
 }
 
 
+@needs_jenkins_repo
 def test_lists_match_jenkins():
     lists = catalog.load("os-lists.yml")
     for name, fname in LIST_FILES.items():
@@ -24,6 +32,7 @@ def test_lists_match_jenkins():
         assert lists[name] == jenkins_oses, name
 
 
+@needs_jenkins_repo
 def test_amis_match_moleculeenv():
     envtext = open(ENVPPG).read()
     amis = dict(re.findall(r"export ami_(\w+)=(ami-\w+)", envtext))
@@ -40,6 +49,7 @@ def test_arm_entry():
     assert e["aws"]["ami_arm"] == "ami-009aa536d30f23947"
 
 
+@needs_jenkins_repo
 def test_subnets_match():
     envtext = open(ENVPPG).read()
     subs = dict(re.findall(r"export vpc_subnet_id_(\w+)=(subnet-\w+)", envtext))

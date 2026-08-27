@@ -112,6 +112,34 @@ def test_resolve_params_default_parallel_overrides_default():
     assert parallel[0]["default"] == "pg-18.4"
 
 
+def test_generate_env_groovy_matches_golden():
+    out = gen_jenkins.generate_env_groovy()
+    assert out == (GOLDEN / "moleculeEnvPPG.groovy").read_text()
+
+
+def test_write_cmd_writes_env_groovy_by_default(tmp_path):
+    _populate(tmp_path)
+    rc = gen_jenkins.main(["--jenkins-repo", str(tmp_path)])
+    assert rc == 0
+    assert (tmp_path / "vars" / "moleculeEnvPPG.groovy").read_text() == \
+        (GOLDEN / "moleculeEnvPPG.groovy").read_text()
+
+
+def test_check_cmd_skips_env_groovy_with_explicit_group(tmp_path):
+    _populate(tmp_path)
+    rc = gen_jenkins.main(["--jenkins-repo", str(tmp_path), "--group", "pg_tde/tde", "--check"])
+    assert rc == 0
+    assert not (tmp_path / "vars" / "moleculeEnvPPG.groovy").exists()
+
+
+def test_check_cmd_reports_drift_on_missing_env_groovy(tmp_path, capsys):
+    _populate(tmp_path)
+    rc = gen_jenkins.main(["--jenkins-repo", str(tmp_path), "--check"])
+    assert rc == 1
+    out = capsys.readouterr().out
+    assert "DRIFT %s (missing)" % (tmp_path / "vars" / "moleculeEnvPPG.groovy") in out
+
+
 def test_generate_without_slack_key_omits_notification(tmp_path):
     group_dir = tmp_path / "group"
     group_dir.mkdir()

@@ -21,6 +21,11 @@ documentation jobs unrelated to the ppg-testing molecule scenarios; the mechanic
 alone is enough to classify those as `hand-written-non-molecule`. Everything else was
 read in full and compared stage-by-stage against `templates/jenkins/{single,parallel}.groovy.j2`.
 
+Drift protection: `tools/gen_jenkins.py --check` runs in this repo's github workflow
+(`.github/workflows/qa-tools.yml`, advisory until both branches merge). On the
+jenkins-pipelines side the same check is `ppg/check-generated.sh` -- that repo has no
+github ci, so it stays a manual/pre-push check until someone wires it into a ci trigger.
+
 Dispositions:
 - **generated** -- this task makes it generated from a `scenario.yml` `jenkins` section.
 - **hand-written-needs-render-line** -- molecule-based, stays hand-written for now; a
