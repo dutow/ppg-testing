@@ -76,6 +76,7 @@ On a machine that is both hypervisor and runner:
 source ~/.venvs/ppg-molecule/bin/activate
 cd ppg-testing
 . local/env.sh
+python3 tools/render.py --group pg_tde/tde
 cd pg_tde/tde
 export VERSION=ppg-18.4 REPO=testing IO_METHOD=sync
 export TDE_REPO=https://github.com/percona/pg_tde.git TDE_BRANCH=release-2.2
@@ -132,6 +133,7 @@ Note: tde.groovy's default TDE_BRANCH=release-2.2.0 is a stale upstream ref, use
 
 ## How it works
 
+Scenario dirs (molecule/<os>/molecule.yml) are not in git any more -- they get rendered from each group's scenario.yml plus catalog/ by tools/render.py, and the output carries a "do not edit" header. Use `--all` to render every group, or `--clean` to remove generated files again.
 Vendor cloud images are downloaded once, cached under PPG_IMAGE_CACHE, and uploaded to the pool as `base-<image>.qcow2` volumes.
 Each instance is a qcow2 overlay on top of that base, sized max(volume_size or 30G, base virtual size) -- OL KVM templates are 37G, going below the base size truncates the disk.
 Each instance also gets a cloud-init NoCloud seed iso.

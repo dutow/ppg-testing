@@ -3,7 +3,7 @@ import pathlib
 import pytest
 
 from tools import catalog, render
-from tools.migrate_check import substituted_original
+from tools.migrate_check import snapshot_original, snapshot_pairs
 
 REPO = pathlib.Path(__file__).resolve().parent.parent.parent
 
@@ -24,9 +24,21 @@ scenarios:
 
 
 @pytest.mark.parametrize("os_key", ["debian-13", "debian-13-arm", "rocky-9", "ubuntu-jammy"])
-def test_tde_render_matches_git(os_key):
+def test_tde_render_matches_snapshot(os_key):
     rendered = render.render_one(REPO / "pg_tde/tde", os_key)
-    assert rendered == substituted_original("pg_tde/tde", os_key)
+    assert rendered == snapshot_original("pg_tde__tde", os_key)
+
+
+def test_full_snapshot_renders_byte_identical():
+    pairs = snapshot_pairs()
+    assert len(pairs) == 83
+    mismatches = []
+    for rel, key, scenario in pairs:
+        rendered = render.render_one(REPO / rel, scenario)
+        original = snapshot_original(key, scenario)
+        if rendered != original:
+            mismatches.append("%s/%s" % (rel, scenario))
+    assert not mismatches
 
 
 def test_apply_overrides_rejects_unknown_key():

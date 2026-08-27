@@ -19,33 +19,7 @@ if str(REPO) not in sys.path:
 import yaml
 
 from tools import catalog
-from tools.catalog import DEFAULT_CONVERGE, DEFAULT_BILLING_TAG
-SKIP_NAMES = {"__init__.py", "__pycache__"}
-
-
-def find_groups():
-    groups = set()
-    for p in REPO.rglob("molecule"):
-        if not p.is_dir():
-            continue
-        rel = p.relative_to(REPO)
-        if rel.parts[0] == "tools":
-            continue
-        groups.add(p.parent)
-    return sorted(groups, key=lambda p: str(p.relative_to(REPO)))
-
-
-def scenario_dirs(group_dir):
-    mdir = group_dir / "molecule"
-    if not mdir.is_dir():
-        return []
-    out = []
-    for d in sorted(mdir.iterdir()):
-        if d.name in SKIP_NAMES:
-            continue
-        if d.is_dir() and (d / "molecule.yml").exists():
-            out.append(d.name)
-    return out
+from tools.catalog import DEFAULT_CONVERGE, DEFAULT_BILLING_TAG, find_groups, scenario_dirs
 
 
 def is_catalog_os_key(name):
