@@ -1,0 +1,149 @@
+debian-11:
+  token: debian11
+  ami_var: debian11
+  family: deb
+  aws:
+    ami_x86: ami-06687054858616b40
+    ami_arm: ami-08e24dd64c14e3365
+    ssh_user: admin
+    root_device: /dev/xvda
+
+debian-12:
+  token: debian12
+  ami_var: debian12
+  family: deb
+  aws:
+    ami_x86: ami-0fe0ff90aca4c9a3d
+    ami_arm: ami-03737899470c20c63
+    ssh_user: admin
+    root_device: /dev/xvda
+
+debian-13:
+  token: debian13
+  ami_var: debian13
+  family: deb
+  aws:
+    ami_x86: ami-00baf448a290e0604
+    ami_arm: ami-009aa536d30f23947
+    ssh_user: admin
+    root_device: /dev/xvda
+
+ol-8:
+  token: ol8
+  ami_var: ol8
+  family: rpm
+  aws:
+    ami_x86: ami-0e0e998c65a976999
+    ami_arm: ami-071bae27d870de243
+    ssh_user: ec2-user
+    root_device: /dev/sda1
+
+ol-9:
+  token: ol9
+  ami_var: ol9
+  family: rpm
+  aws:
+    ami_x86: ami-0ff577495b12a61d0
+    ami_arm: ami-0515e1daa5133a795
+    ssh_user: ec2-user
+    root_device: /dev/sda1
+
+ol-10:
+  token: ol10
+  ami_var: ol10
+  family: rpm
+  aws:
+    ami_x86: ami-02dfdbeca8fff8b2c
+    ami_arm: ami-06e30caa5194c5376
+    ssh_user: ec2-user
+    root_device: /dev/sda1
+
+rhel-8:
+  token: rhel8
+  ami_var: rhel8
+  family: rpm
+  aws:
+    ami_x86: ami-07a95227ea69ac5a7
+    ami_arm: ami-04621017594ba750b
+    ssh_user: ec2-user
+    root_device: /dev/sda1
+
+rhel-9:
+  token: rhel9
+  ami_var: rhel9
+  family: rpm
+  aws:
+    ami_x86: ami-035f430eefe0c383c
+    ami_arm: ami-094c0b306a78f3e3a
+    ssh_user: ec2-user
+    root_device: /dev/sda1
+
+rhel-10:
+  token: rhel10
+  ami_var: rhel10
+  family: rpm
+  aws:
+    ami_x86: ami-0ef84e5fc5f7d6606
+    ami_arm: ami-05d5565696a1fbcc5
+    ssh_user: ec2-user
+    root_device: /dev/sda1
+
+rocky-8:
+  token: rocky8
+  ami_var: rocky8
+  family: rpm
+  aws:
+    ami_x86: ami-01ec023360d049e24
+    ami_arm: ami-0070049a80bb9feeb
+    ssh_user: rocky
+    root_device: /dev/sda1
+
+rocky-9:
+  token: rocky9
+  ami_var: rocky9
+  family: rpm
+  aws:
+    ami_x86: ami-0e06b7199317035de
+    ami_arm: ami-02b7184cdfa7cad8c
+    ssh_user: rocky
+    root_device: /dev/sda1
+
+rocky-10:
+  token: rocky10
+  ami_var: rocky10
+  family: rpm
+  aws:
+    ami_x86: ami-02a4dd3a5a286b9be
+    ami_arm: ami-0790a371ac070a029
+    ssh_user: rocky
+    root_device: /dev/sda1
+
+ubuntu-jammy:
+  token: ujammy
+  ami_var: ubuntu22
+  family: deb
+  aws:
+    ami_x86: ami-0ae88d5843aab690d
+    ami_arm: ami-002da4b711811778d
+    ssh_user: ubuntu
+    root_device: /dev/sda1
+
+ubuntu-noble:
+  token: unoble
+  ami_var: ubuntu24
+  family: deb
+  aws:
+    ami_x86: ami-04bc554a9635a77c8
+    ami_arm: ami-0c355ec49d386672d
+    ssh_user: ubuntu
+    root_device: /dev/sda1
+
+ubuntu-resolute:
+  token: uresolute
+  ami_var: ubuntu26
+  family: deb
+  aws:
+    ami_x86: ami-0f60f7b735e5e576c
+    ami_arm: ami-0f89bfe113307ab25
+    ssh_user: ubuntu
+    root_device: /dev/sda1
