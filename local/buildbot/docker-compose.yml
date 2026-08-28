@@ -1,0 +1,40 @@
+services:
+  master:
+    build: .
+    command: start-master.sh
+    # no auth in front of it, keep it off the network
+    ports: ["127.0.0.1:8010:8010"]
+    environment:
+      - PPG_LOCAL_SLOTS=${PPG_LOCAL_SLOTS:-4}
+      - PPG_WORKER_PASS=${PPG_WORKER_PASS:-ppg-local}
+      # not /repo: master.cfg materializes the generated groups, needs a
+      # writable tree, start-master.sh rsyncs the read-only mount here
+      - PPG_TESTING_DIR=/work
+      - PPG_TESTING_REPO=/repo
+      - PPG_TESTING_BRANCH=${PPG_TESTING_BRANCH:-main}
+      - PPG_BUILDBOT_URL=${PPG_BUILDBOT_URL:-http://localhost:8010/}
+    volumes:
+      - ../..:/repo:ro
+      - ./master.cfg:/cfg/master.cfg:ro
+      - master-state:/bb
+      - artifacts:/artifacts
+
+  worker:
+    build: .
+    command: start-worker.sh
+    depends_on: [master]
+    environment:
+      - PPG_LOCAL_SLOTS=${PPG_LOCAL_SLOTS:-4}
+      - PPG_WORKER_PASS=${PPG_WORKER_PASS:-ppg-local}
+      - PPG_HYPERVISOR_SSH=${PPG_HYPERVISOR_SSH}
+    volumes:
+      # only the git source for the checkout step, builds never run from it
+      - ../..:/repo:ro
+      - worker-state:/bbw
+      - artifacts:/artifacts
+      - ${PPG_SSH_KEY:-~/.ssh/id_ed25519}:/root/.ssh/id_ed25519:ro
+
+volumes:
+  master-state:
+  worker-state:
+  artifacts:
