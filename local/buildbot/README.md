@@ -57,8 +57,11 @@ The waterfall/grid stays empty until something is forced. Every group has its ow
 * **TESTING_BRANCH** -- branch to check out
 * one field per descriptor param: choice, boolean or string with the descriptor default. `PLATFORM` and `DESTROY_ENV` are never exposed, `PLATFORM` comes from the selected OS
 
-The OS list is the descriptor's full list, which includes entries the local libvirt backend cannot serve: `rhel-*` (no subscription locally, use rocky instead) and `*-arm`.
-`local/env.sh` leaves those image keys unset, so picking them gets you a failure in molecule create, not a skip.
+The OS choices are the descriptor's full list, but entries the local libvirt backend
+cannot serve -- `rhel-*` (no subscription locally, use rocky instead) and `*-arm` --
+are deselected by default, and sweeps never fan out to them. `local/env.sh` leaves
+those image keys unset, so explicitly picking one gets you a failure in molecule
+create, not a skip.
 
 One descriptor default is broken upstream: `run-pg_tde-tde` prefills `TDE_BRANCH=release-2.2.0`, which does not exist (the branch is `release-2.2`, the tag is `release-2.2.1`). Put `release-2.2` in the field until the descriptor is fixed.
 
@@ -80,7 +83,7 @@ Two extra force schedulers run many groups from one button, on the `sweep-run` b
 * **VERSION**, **FROM_VERSION**, **REPO** -- set once for every selected group. Empty means "keep whatever the descriptor defaults to", and each group only gets the ones its `scenario.yml` actually declares, so it is safe to select groups with different param sets
 * **TESTING_BRANCH**
 
-Mind the scale: the default selection is 37 groups over their full os lists, about 1100 molecule builds, and each one may take up to the 4 hour step timeout. At 4 slots that is not a quick check -- trim the group and os selection unless you really mean the whole matrix.
+Mind the scale: the default selection is 37 groups over their locally runnable os lists, about 450 molecule builds, and each one may take up to the 4 hour step timeout. At 4 slots that is not a quick check -- trim the group selection unless you really mean the whole matrix.
 
 Mind the concurrency too: the libvirt backend has no base-volume locking yet (see the troubleshooting note in `local/README.md`), and a sweep is exactly the workload that trips it -- different groups on the *same* OS at the same time, all wanting the same base image, with a TOCTOU between the existence check and the upload. The second one can get a half-uploaded base.
 Until locking exists, run sweeps with `PPG_LOCAL_SLOTS=1`, or accept the risk and re-run the odd broken scenario.

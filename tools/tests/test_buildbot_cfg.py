@@ -114,7 +114,11 @@ def test_force_fields_from_descriptor(cfg):
         assert {"group", "oses", "sequence", "TESTING_BRANCH"} <= set(fields)
         assert fields["group"].default == group
         assert fields["oses"].multiple
-        assert fields["oses"].default == cfg["render"].expand_scenarios(desc)
+        assert fields["oses"].choices == cfg["render"].expand_scenarios(desc)
+        assert fields["oses"].default == cfg["local_oses"](
+            cfg["render"].expand_scenarios(desc))
+        assert not [o for o in fields["oses"].default
+                    if o.endswith("-arm") or o.startswith("rhel-")]
         assert fields["sequence"].choices == sorted(desc.get("sequences", {}))
         for p in desc.get("params", []):
             name = p["name"]
@@ -394,7 +398,7 @@ def test_sweep_result_rules(cfg):
 def test_sweep_destroy_over_real_groups(cfg, monkeypatch):
     # every descriptor declares destroy today, so nothing gets skipped
     real = sorted(cfg["GROUPS"])
-    expected = sum(len(cfg["render"].expand_scenarios(cfg["GROUPS"][g]))
+    expected = sum(len(cfg["local_oses"](cfg["render"].expand_scenarios(cfg["GROUPS"][g])))
                    for g in real)
     sweep = make_sweep(cfg, monkeypatch, buildnumber=1, sequence="destroy",
                        groups=real, BUILD_NUMBER="41")

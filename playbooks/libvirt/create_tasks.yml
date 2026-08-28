@@ -76,7 +76,9 @@
     {{ item.user }}@{{ item.address }} true
   register: ssh_ok
   until: ssh_ok.rc == 0
-  retries: 30
+  # several concurrent creates on one hypervisor slow first boot down a lot;
+  # 150s was observed too short with 4 parallel guests, give it 300s
+  retries: 60
   delay: 5
   changed_when: false
   no_log: false

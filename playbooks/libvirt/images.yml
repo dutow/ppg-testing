@@ -24,11 +24,13 @@ ubuntu-22:
   ssh_user: ubuntu
 ubuntu-24:
   url: https://cloud-images.ubuntu.com/noble/current/noble-server-cloudimg-amd64.img
-  checksum: "sha256:6e40c07ae715f744f84af0bec76415cc1987dd115b4b8de437818561f01a3733"
+  # /current/ images get rebuilt upstream; on mismatch re-pin from
+  # https://cloud-images.ubuntu.com/<series>/current/SHA256SUMS
+  checksum: "sha256:d0fe84bb5f80853425fa6be28e2c106f30104c3cfe8611933f2e65c9b63f0e30"
   ssh_user: ubuntu
 ubuntu-26:
   url: https://cloud-images.ubuntu.com/resolute/current/resolute-server-cloudimg-amd64.img
-  checksum: "sha256:9dc7c5363c0146a08ba0c9aa834d82c2c6dfbb1c471ad9a2f0aba1189e21be05"
+  checksum: "sha256:8196be9d7958059cb56c6c75c80fdf6cee8a8885bc149ea791d7db1c7ef93035"
   ssh_user: ubuntu
 rocky-8:
   url: https://dl.rockylinux.org/pub/rocky/8/images/x86_64/Rocky-8-GenericCloud-Base.latest.x86_64.qcow2
