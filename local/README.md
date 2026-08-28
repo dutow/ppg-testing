@@ -33,9 +33,11 @@ The pool commands also work remotely over qemu+ssh as an unprivileged libvirt-gr
 ### Firewall gotcha with docker
 
 If docker runs on the hypervisor host, it sets the iptables FORWARD policy to DROP, and libvirt with the nftables backend does not counter that.
-Guests still get DHCP and DNS (that is host-input traffic), but no internet egress.
-The symptom is prepare/converge looking "hung": the apt task retries 60 times and each attempt stalls for minutes in apt/dnf retries.
-Diagnosis: from a guest, `ping 8.8.8.8` fails but DNS resolves.
+Guests still get DHCP and DNS (that is host-input traffic), but forwarded traffic dies in both directions. Two symptom signatures, same cause:
+
+* guest egress: prepare/converge looks "hung", the apt/dnf task retries for minutes per attempt. From a guest, `ping 8.8.8.8` fails but DNS resolves.
+* container to guest (the buildbot worker, or any molecule run inside a container): create fails at "Wait for SSH" with connection refused, while `ssh` to the same guest works fine from the host itself.
+
 Fix (as root on the host):
 
 ```
@@ -43,8 +45,30 @@ iptables -I DOCKER-USER -i virbr0 -j ACCEPT
 iptables -I DOCKER-USER -o virbr0 -j ACCEPT
 ```
 
-This is NOT reboot-persistent.
-Persist it with whatever your distro uses, e.g. a small systemd oneshot ordered after docker.service, or firewalld direct rules.
+These rules do not persist: a reboot loses them, and so can a live firewalld
+reload/restart, a libvirtd restart, or a docker upgrade -- confirmed to disappear
+without any reboot. Any molecule run mysteriously failing at "Wait for SSH" (or
+guests losing egress) means check `iptables -S DOCKER-USER` first.
+If firewalld is the one wiping them, prefer a firewalld direct rule over the unit
+below. Otherwise, a systemd oneshot ordered after docker (which is what resets
+FORWARD) covers reboots:
+
+```
+# /etc/systemd/system/virbr0-docker-forward.service
+[Unit]
+After=docker.service network.target
+Requires=docker.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/sbin/iptables -I DOCKER-USER -i virbr0 -j ACCEPT
+ExecStart=/usr/sbin/iptables -I DOCKER-USER -o virbr0 -j ACCEPT
+
+[Install]
+WantedBy=multi-user.target
+```
+
+`systemctl daemon-reload && systemctl enable --now virbr0-docker-forward.service`
 
 ## Runner setup
 
