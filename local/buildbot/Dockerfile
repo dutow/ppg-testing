@@ -18,5 +18,10 @@ RUN pip install --no-cache-dir \
 RUN mkdir -p /etc/ssh/ssh_config.d \
     && printf 'Host *\n  StrictHostKeyChecking accept-new\n' > /etc/ssh/ssh_config.d/local.conf
 
+# the worker clones from the bind-mounted checkout, which is owned by the
+# host user while git runs as root here -- exempt everything from the
+# dubious-ownership check, this container only ever touches that one repo
+RUN git config --system --add safe.directory "*"
+
 COPY start-master.sh start-worker.sh /usr/local/bin/
 RUN chmod +x /usr/local/bin/start-master.sh /usr/local/bin/start-worker.sh

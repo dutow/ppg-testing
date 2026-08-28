@@ -8,8 +8,27 @@ set -e
 # without it every molecule create fails deep in libvirt, fail here instead
 : "${PPG_HYPERVISOR_SSH:?set PPG_HYPERVISOR_SSH, see local/README.md}"
 
+# compose stages the hypervisor key at /run/ppg-ssh-key. If the host path did
+# not exist, docker created a directory there instead -- catch that here, and
+# install a real key with the 600 perms ssh demands.
+if [ ! -f /run/ppg-ssh-key ]; then
+    echo "error: /run/ppg-ssh-key is not a regular file." >&2
+    echo "PPG_SSH_KEY (default ~/.ssh/id_ed25519) does not exist on the host:" >&2
+    echo "docker auto-created a directory at that path -- remove it and point" >&2
+    echo "PPG_SSH_KEY at a key authorized on the hypervisor. See local/buildbot/README.md" >&2
+    exit 1
+fi
+mkdir -p /root/.ssh
+install -m 600 /run/ppg-ssh-key /root/.ssh/id_ed25519
+
 SLOTS=${PPG_LOCAL_SLOTS:-4}
 PASS=${PPG_WORKER_PASS:-ppg-local}
+
+# the state volume outlives the container but the pid namespace does not:
+# any twistd.pid in it is stale, and a sibling process can even reuse the
+# recorded pid, making twistd refuse to start ("Another twistd server is
+# running"). Nothing can be running yet this early in the entrypoint.
+rm -f /bbw/molecule-*/twistd.pid
 
 i=1
 while [ "$i" -le "$SLOTS" ]; do

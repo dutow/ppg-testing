@@ -114,6 +114,7 @@ def run_os(group_dir, os_key, actions, base_env, os_dir, keep, artifact_glob):
     env["PLATFORM"] = os_key
     started = time.time()
     status = "failed"
+    failed_action = None
     with open(os_dir / "molecule.log", "wb") as log:
         try:
             for action in actions:
@@ -121,6 +122,7 @@ def run_os(group_dir, os_key, actions, base_env, os_dir, keep, artifact_glob):
                 if rc != 0:
                     print("error: molecule %s -s %s exited %d"
                           % (action, os_key, rc), file=sys.stderr)
+                    failed_action = action
                     break
             else:
                 status = "passed"
@@ -128,7 +130,10 @@ def run_os(group_dir, os_key, actions, base_env, os_dir, keep, artifact_glob):
             if not keep:
                 _run(["molecule", "destroy", "-s", os_key], group_dir, env, log)
             collect_artifacts(group_dir, os_dir, started, artifact_glob)
-    return {"status": status, "seconds": round(time.time() - started, 1)}
+    result = {"status": status, "seconds": round(time.time() - started, 1)}
+    if failed_action:
+        result["failed_action"] = failed_action
+    return result
 
 
 def list_cmd(group):
@@ -230,7 +235,8 @@ def main(argv=None):
         }, indent=2) + "\n")
 
     for os_key, r in results.items():
-        print("%-20s %s (%ss)" % (os_key, r["status"], r["seconds"]))
+        where = " at %s" % r["failed_action"] if "failed_action" in r else ""
+        print("%-20s %s%s (%ss)" % (os_key, r["status"], where, r["seconds"]))
     all_passed = (len(results) == len(args.os)
                   and all(r["status"] == "passed" for r in results.values()))
     return 0 if all_passed else 1

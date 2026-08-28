@@ -12,6 +12,16 @@ Nothing here is generated or duplicated: `master.cfg` imports `tools/render.py` 
 export PPG_HYPERVISOR_SSH=user@hypervisor-host
 ```
 
+The variables must be set in the shell that runs `task bot-up` (compose reads them at
+`up` time; the worker refuses to start without `PPG_HYPERVISOR_SSH`). To make them
+stick, put them in `local/buildbot/.env` instead -- compose loads it automatically,
+and it is gitignored:
+
+```
+PPG_HYPERVISOR_SSH=user@hypervisor-host
+PPG_TESTING_BRANCH=descriptor-orchestration
+```
+
 Until the descriptor work lands on `main`, also:
 
 ```
@@ -24,7 +34,7 @@ Optional:
 
 | var | default | meaning |
 | --- | --- | --- |
-| `PPG_SSH_KEY` | `~/.ssh/id_ed25519` | key mounted into the worker, must be authorized on the hypervisor |
+| `PPG_SSH_KEY` | `~/.ssh/id_ed25519` | private key for the hypervisor, staged into the worker with 600 perms. Must exist **on the machine running docker** and be authorized for the `PPG_HYPERVISOR_SSH` user -- a key that only exists inside a dev container does not count. If the path is missing at first `up`, docker leaves an empty *directory* behind at it (remove with `rmdir`); the worker now refuses to start in that case instead of failing deep in virsh |
 | `PPG_LOCAL_SLOTS` | 4 | how many scenarios run in parallel |
 | `PPG_TESTING_BRANCH` | `main` | default value of the TESTING_BRANCH form field, wins over the descriptor default |
 | `PPG_WORKER_PASS` | `ppg-local` | worker password, only matters if you expose the ports |
@@ -50,6 +60,8 @@ The waterfall/grid stays empty until something is forced. Every group has its ow
 The OS list is the descriptor's full list, which includes entries the local libvirt backend cannot serve: `rhel-*` (no subscription locally, use rocky instead) and `*-arm`.
 `local/env.sh` leaves those image keys unset, so picking them gets you a failure in molecule create, not a skip.
 
+One descriptor default is broken upstream: `run-pg_tde-tde` prefills `TDE_BRANCH=release-2.2.0`, which does not exist (the branch is `release-2.2`, the tag is `release-2.2.1`). Put `release-2.2` in the field until the descriptor is fixed.
+
 Forcing starts one `group-run` build on the master-local coordinator, which fans out to one `molecule-run` build per selected OS.
 Those builds report under the virtual builder name `<group> <os>`, so a partially failing group shows up as per-OS red/green instead of one red blob.
 Each of them is a single `tools/run.py --group ... --os <one>` call.
@@ -69,6 +81,9 @@ Two extra force schedulers run many groups from one button, on the `sweep-run` b
 * **TESTING_BRANCH**
 
 Mind the scale: the default selection is 37 groups over their full os lists, about 1100 molecule builds, and each one may take up to the 4 hour step timeout. At 4 slots that is not a quick check -- trim the group and os selection unless you really mean the whole matrix.
+
+Mind the concurrency too: the libvirt backend has no base-volume locking yet (see the troubleshooting note in `local/README.md`), and a sweep is exactly the workload that trips it -- different groups on the *same* OS at the same time, all wanting the same base image, with a TOCTOU between the existence check and the upload. The second one can get a half-uploaded base.
+Until locking exists, run sweeps with `PPG_LOCAL_SLOTS=1`, or accept the risk and re-run the odd broken scenario.
 
 `VERSION` and `FROM_VERSION` only reach the groups whose descriptor declares them.
 `VERSION` reaches 35 groups: all 30 generated `ppg/*` ones plus `pg_tde/tde`, `pg_tde/auxiliary`, `pg_stat_monitor/*` and `psp/server_tests`.

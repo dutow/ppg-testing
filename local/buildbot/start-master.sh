@@ -12,4 +12,6 @@ rsync -a --delete --exclude .git/ --filter=':- .gitignore' /repo/ "$WORK"/
 [ -f /bb/buildbot.tac ] || buildbot create-master -r /bb
 ln -sf /cfg/master.cfg /bb/master.cfg
 buildbot upgrade-master /bb
+# stale pidfile from the previous container run, same story as the workers
+rm -f /bb/twistd.pid
 exec buildbot start --nodaemon /bb

@@ -144,6 +144,17 @@ def test_main_failure_still_destroys_and_exits_1(fake_group, tmp_path, monkeypat
                    "--artifacts-dir", str(tmp_path / "a")])
     assert rc == 1
     assert [c[0][1] for c in calls] == ["create", "converge", "destroy"]
+    summary = json.loads((tmp_path / "a" / "summary.json").read_text())
+    assert summary["oses"]["debian-13"]["failed_action"] == "converge"
+
+
+def test_main_passed_has_no_failed_action(fake_group, tmp_path, monkeypatch):
+    _capture(monkeypatch)
+    rc = run.main(["--group", str(fake_group), "--os", "debian-13",
+                   "--artifacts-dir", str(tmp_path / "a")])
+    assert rc == 0
+    summary = json.loads((tmp_path / "a" / "summary.json").read_text())
+    assert "failed_action" not in summary["oses"]["debian-13"]
 
 
 def test_main_keep_skips_safety_destroy(fake_group, tmp_path, monkeypatch):

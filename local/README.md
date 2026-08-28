@@ -192,6 +192,13 @@ task destroy GROUP=pg_tde/tde OS=ol-9
 
 `OS` can list several keys, space separated, run sequentially (same as `--os` on run.py).
 Anything after `--` is passed straight through to run.py as extra flags.
+
+Heads up on `pg_tde`: the descriptor default `TDE_BRANCH=release-2.2.0` does not exist upstream (the branch is `release-2.2`, the tag is `release-2.2.1`), so the clone task fails with it.
+Override until the descriptor is fixed:
+
+```
+task tde OS=ol-9 -- --param TDE_BRANCH=release-2.2
+```
 By default python comes from `~/.venvs/ppg-molecule/bin/python`, override with `PPG_PY=/path/to/python`.
 
 The `bot-up` / `bot-down` / `bot-logs` tasks manage the local buildbot compose stack at `local/buildbot/docker-compose.yml`.
