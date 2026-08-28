@@ -70,8 +70,12 @@ Two extra force schedulers run many groups from one button, on the `sweep-run` b
 
 Mind the scale: the default selection is 37 groups over their full os lists, about 1100 molecule builds, and each one may take up to the 4 hour step timeout. At 4 slots that is not a quick check -- trim the group and os selection unless you really mean the whole matrix.
 
-`VERSION` and `FROM_VERSION` only reach the groups whose descriptor declares them, today `pg_tde/tde`, `pg_tde/auxiliary`, `pg_stat_monitor/*` and `psp/server_tests` for `VERSION` and nothing at all for `FROM_VERSION`.
-The generated `ppg/*` groups declare no params yet, so a sweep cannot set their version; that descriptor gap is being closed separately.
+`VERSION` and `FROM_VERSION` only reach the groups whose descriptor declares them.
+`VERSION` reaches 35 groups: all 30 generated `ppg/*` ones plus `pg_tde/tde`, `pg_tde/auxiliary`, `pg_stat_monitor/*` and `psp/server_tests`.
+`FROM_VERSION`, `FROM_REPO` and `TO_REPO` reach the 12 `ppg/*-minor-upgrade` and `ppg/*-major-upgrade` groups, which is everything that upgrades anything.
+`REPO` reaches the 18 non-upgrade `ppg/*` groups (the upgrade ones take `FROM_REPO`/`TO_REPO` instead), `pg_tde/*` and `pg_stat_monitor/pgsm`.
+The generated `ppg/*` defaults come from `ppg/versions.yml` (`default_version`, `default_from_version`), so leaving the sweep fields empty runs each major against its own newest minor.
+`ppg/pg-tarballs` is the one hand-written group left with no params, so a sweep cannot pin its version.
 
 A group that does not declare the requested sequence runs `test` instead, which every descriptor has -- better than dropping it from the sweep unnoticed.
 `destroy` and `cleanup` are exempt from that fallback: those groups are skipped, because running a full test suite in place of a cleanup is expensive and not what was asked.
