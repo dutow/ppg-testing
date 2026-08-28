@@ -1,0 +1,61 @@
+# UX sugar over tools/run.py -- no logic here, see local/README.md.
+version: '3'
+
+vars:
+  PY:
+    sh: 'echo "${PPG_PY:-$HOME/.venvs/ppg-molecule/bin/python}"'
+
+tasks:
+  list:
+    desc: list molecule groups (or GROUP=... for its params/oses)
+    cmds:
+      - '{{.PY}} tools/run.py --list {{if .GROUP}}--group {{.GROUP}}{{end}}'
+
+  run:
+    desc: 'task run GROUP=pg_tde/tde OS="ol-9 debian-12" -- --param TDE_BRANCH=main'
+    cmds:
+      - . local/env.sh && PATH="$(dirname {{.PY}}):$PATH" {{.PY}} tools/run.py --group {{.GROUP}} --os {{.OS}} {{.CLI_ARGS}}
+
+  destroy:
+    desc: 'task destroy GROUP=... OS=... -- mop up leftover guests'
+    cmds:
+      - . local/env.sh && PATH="$(dirname {{.PY}}):$PATH" {{.PY}} tools/run.py --group {{.GROUP}} --os {{.OS}} --sequence destroy
+
+  tde:
+    desc: 'task tde OS=ol-9 [-- --param ...]'
+    cmds:
+      - task: run
+        vars: { GROUP: pg_tde/tde, OS: '{{.OS}}', CLI_ARGS: '{{.CLI_ARGS}}' }
+
+  pgsm:
+    desc: 'task pgsm OS=ol-9 [-- --param ...]'
+    cmds:
+      - task: run
+        vars: { GROUP: pg_stat_monitor/pgsm, OS: '{{.OS}}', CLI_ARGS: '{{.CLI_ARGS}}' }
+
+  psp:
+    desc: 'task psp OS=ol-9 [-- --param ...]'
+    cmds:
+      - task: run
+        vars: { GROUP: psp/server_tests, OS: '{{.OS}}', CLI_ARGS: '{{.CLI_ARGS}}' }
+
+  ppg:
+    desc: 'task ppg SCENARIO=pg-17 OS=ol-9 [-- --param ...]'
+    cmds:
+      - task: run
+        vars: { GROUP: 'ppg/{{.SCENARIO}}', OS: '{{.OS}}', CLI_ARGS: '{{.CLI_ARGS}}' }
+
+  bot-up:
+    desc: start the local buildbot stack
+    cmds:
+      - docker compose -f local/buildbot/docker-compose.yml up -d --build
+
+  bot-down:
+    desc: stop the local buildbot stack
+    cmds:
+      - docker compose -f local/buildbot/docker-compose.yml down
+
+  bot-logs:
+    desc: tail buildbot stack logs
+    cmds:
+      - docker compose -f local/buildbot/docker-compose.yml logs -f

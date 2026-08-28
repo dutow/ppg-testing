@@ -163,3 +163,35 @@ debian-13+ images are EFI-only, so the domain template uses EFI for all images.
 * failures print censored "no_log" output for some tasks unless MOLECULE_DEBUG=1 is set.
   The backend's own failure-prone tasks are exempted and name the domain.
 * checksum mismatch on image download: the vendor rotated the "latest" image. Refresh url and checksum in `playbooks/libvirt/images.yml`.
+
+## task shortcuts
+
+`Taskfile.yml` at the repo root is optional sugar over `tools/run.py`, nothing more -- every task just shells out, so `tools/run.py` works fine standalone without go-task installed.
+Each task sources `local/env.sh` itself, so you only need to export `PPG_HYPERVISOR_SSH` (if remote) before calling `task`.
+
+Install go-task if you don't have it:
+
+```
+sh -c "$(curl -sL https://taskfile.dev/install.sh)" -- -d -b ~/.local/bin
+```
+
+Make sure `~/.local/bin` is on PATH.
+
+Examples:
+
+```
+task list                                   # list groups
+task list GROUP=pg_tde/tde                  # group's oses/sequences/params
+task tde OS=ol-9                            # family shortcut
+task pgsm OS=ol-9
+task psp OS=ol-9
+task ppg SCENARIO=pg-17 OS=ol-9
+task run GROUP=pg_tde/tde OS="ol-9 debian-12" -- --param TDE_BRANCH=main --keep
+task destroy GROUP=pg_tde/tde OS=ol-9
+```
+
+`OS` can list several keys, space separated, run sequentially (same as `--os` on run.py).
+Anything after `--` is passed straight through to run.py as extra flags.
+By default python comes from `~/.venvs/ppg-molecule/bin/python`, override with `PPG_PY=/path/to/python`.
+
+The `bot-up` / `bot-down` / `bot-logs` tasks manage the local buildbot compose stack at `local/buildbot/docker-compose.yml`.
